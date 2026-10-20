@@ -110,6 +110,7 @@ internal fun MediaPlayerContent(
         initialContentScale = playerPreferences.playerVideoZoom,
         enableZoomGesture = playerPreferences.useZoomControls,
         enablePanGesture = playerPreferences.enablePanGesture,
+        enableRotateGesture = playerPreferences.enableRotateGesture,
         onEvent = { onAction(PlayerAction.OnVideoZoomEvent(it)) },
     )
     val brightnessState = if (!isPreview) rememberBrightnessState() else null

@@ -30,6 +30,7 @@ import dev.anilbeesetti.nextplayer.feature.player.ui.controls.ControlsBottomView
 import dev.anilbeesetti.nextplayer.feature.player.ui.controls.ControlsMiddleView
 import dev.anilbeesetti.nextplayer.feature.player.ui.controls.ControlsTopView
 import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.DecoderMode
+import kotlin.math.roundToInt
 
 @OptIn(UnstableApi::class)
 @Composable
@@ -110,7 +111,14 @@ fun PlayerControls(
         }
         when {
             seekGestureState.seekAmount != null -> InfoView(info = "${seekGestureState.seekAmountFormatted}\n[${seekGestureState.seekToPositionFormated}]")
-            videoZoomAndContentScaleState.isZooming -> InfoView(info = "${(videoZoomAndContentScaleState.zoom * 100).toInt()}%")
+            videoZoomAndContentScaleState.isZooming -> InfoView(
+                info = listOfNotNull(
+                    "${(videoZoomAndContentScaleState.zoom * 100).toInt()}%",
+                    videoZoomAndContentScaleState.rotation
+                        .takeIf { it != 0f }
+                        ?.let { "${it.roundToInt()}°" },
+                ).joinToString(separator = "\n"),
+            )
             videoZoomAndContentScaleState.showContentScaleIndicator -> InfoView(info = stringResource(videoZoomAndContentScaleState.videoContentScale.nameRes()))
             controlsVisibilityState.controlsVisible -> ControlsMiddleView(
                 player = player,

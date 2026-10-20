@@ -24,4 +24,20 @@ class PlayerPreferencesTest {
         assertTrue(restored.enableTunneledPlayback)
         assertEquals(preferences, restored)
     }
+
+    @Test
+    fun `rotate gesture stays opt in for existing preferences`() {
+        val preferences = Json.decodeFromString<PlayerPreferences>("""{"useZoomControls":true}""")
+
+        assertFalse(preferences.enableRotateGesture)
+    }
+
+    @Test
+    fun `rotate gesture survives serialization`() {
+        val preferences = PlayerPreferences(enableRotateGesture = true)
+        val restored = Json.decodeFromString<PlayerPreferences>(Json.encodeToString(preferences))
+
+        assertTrue(restored.enableRotateGesture)
+        assertEquals(preferences, restored)
+    }
 }

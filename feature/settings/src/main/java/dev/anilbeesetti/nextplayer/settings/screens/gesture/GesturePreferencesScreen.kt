@@ -193,6 +193,14 @@ private fun GesturePreferencesScreenContent(
                     isChecked = state.preferences.enablePanGesture,
                     onClick = { onAction(GesturePreferencesUiEvent.ToggleEnablePanGesture) },
                 )
+                PreferenceSwitch(
+                    title = stringResource(id = R.string.rotate_gesture),
+                    description = stringResource(id = R.string.rotate_gesture_description),
+                    icon = NextIcons.Rotation,
+                    enabled = state.preferences.useZoomControls,
+                    isChecked = state.preferences.enableRotateGesture,
+                    onClick = { onAction(GesturePreferencesUiEvent.ToggleEnableRotateGesture) },
+                )
                 PreferenceSwitchWithDivider(
                     title = stringResource(id = R.string.double_tap),
                     description = stringResource(id = R.string.double_tap_description),

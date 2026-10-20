@@ -61,4 +61,23 @@ class MediaItemTest {
         assertNull(metadata.audioDecoderMode)
     }
 
+    @Test
+    fun rotationSurvivesMetadataCopiesAndBundleRoundTrip() {
+        val item = MediaItem.Builder().build()
+            .copy(videoZoom = 1.5f, videoRotation = 45f)
+
+        assertEquals(45f, item.mediaMetadata.videoRotation!!, 0.001f)
+
+        val restored = MediaItem.fromBundle(item.toBundle())
+        assertEquals(45f, restored.mediaMetadata.videoRotation!!, 0.001f)
+
+        val rescaled = restored.copy(videoZoom = 2f)
+        assertEquals(2f, rescaled.mediaMetadata.videoZoom!!, 0.001f)
+        assertEquals(45f, rescaled.mediaMetadata.videoRotation!!, 0.001f)
+    }
+
+    @Test
+    fun newItemsHaveNoRotation() {
+        assertNull(MediaItem.EMPTY.mediaMetadata.videoRotation)
+    }
 }

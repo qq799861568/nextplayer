@@ -72,6 +72,7 @@ import dev.anilbeesetti.nextplayer.feature.player.extensions.subtitleTrackIndex
 import dev.anilbeesetti.nextplayer.feature.player.extensions.switchTrack
 import dev.anilbeesetti.nextplayer.feature.player.extensions.uriToSubtitleConfiguration
 import dev.anilbeesetti.nextplayer.feature.player.extensions.videoDecoderMode
+import dev.anilbeesetti.nextplayer.feature.player.extensions.videoRotation
 import dev.anilbeesetti.nextplayer.feature.player.extensions.videoZoom
 import dev.anilbeesetti.nextplayer.feature.player.extensions.withExternalAudio
 import dev.anilbeesetti.nextplayer.feature.player.model.DecoderTrackType
@@ -893,6 +894,7 @@ class PlayerService : MediaSessionService() {
                             setExtras(
                                 positionMs = positionMs,
                                 videoScale = videoScale,
+                                videoRotation = mediaItem.mediaMetadata.videoRotation,
                                 playbackSpeed = playbackSpeed,
                                 audioTrackIndex = audioTrackIndex.takeIf { externalAudio == savedAudio },
                                 subtitleTrackIndex = subtitleTrackIndex,

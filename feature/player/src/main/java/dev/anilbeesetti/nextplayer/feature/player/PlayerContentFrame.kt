@@ -14,6 +14,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.compose.PlayerSurface
 import androidx.media3.ui.compose.SURFACE_TYPE_SURFACE_VIEW
+import androidx.media3.ui.compose.SURFACE_TYPE_TEXTURE_VIEW
 import androidx.media3.ui.compose.modifiers.resizeWithContentScale
 import androidx.media3.ui.compose.state.rememberPresentationState
 import dev.anilbeesetti.nextplayer.feature.player.extensions.toContentScale
@@ -33,10 +34,13 @@ fun PlayerContentFrame(
     subtitleConfiguration: SubtitleConfiguration,
 ) {
     val presentationState = rememberPresentationState(player)
+    val rotation = videoZoomAndContentScaleState.rotation
     Box(modifier.fillMaxSize()) {
         PlayerSurface(
             player = player,
-            surfaceType = SURFACE_TYPE_SURFACE_VIEW,
+            // A SurfaceView surface is punched out of the window using its layout bounds, so a
+            // rotated video is drawn on a TextureView instead, which is transformed like any view.
+            surfaceType = if (rotation == 0f) SURFACE_TYPE_SURFACE_VIEW else SURFACE_TYPE_TEXTURE_VIEW,
             modifier = Modifier
                 .resizeWithContentScale(
                     contentScale = videoZoomAndContentScaleState.videoContentScale.toContentScale(),
@@ -60,6 +64,7 @@ fun PlayerContentFrame(
                 .graphicsLayer {
                     scaleX = videoZoomAndContentScaleState.zoom
                     scaleY = videoZoomAndContentScaleState.zoom
+                    rotationZ = rotation
                     translationX = videoZoomAndContentScaleState.offset.x
                     translationY = videoZoomAndContentScaleState.offset.y
                 },
