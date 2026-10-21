@@ -21,8 +21,12 @@ import dev.anilbeesetti.nextplayer.feature.player.extensions.copy
 import dev.anilbeesetti.nextplayer.feature.player.extensions.next
 import dev.anilbeesetti.nextplayer.feature.player.extensions.videoRotation
 import dev.anilbeesetti.nextplayer.feature.player.extensions.videoZoom
+import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.max
 import kotlin.math.roundToInt
+import kotlin.math.sin
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -41,6 +45,31 @@ internal fun snapRotationToRightAngle(degrees: Float): Float {
     val distance = abs(normalizeRotation(degrees) - normalizeRotation(nearestRightAngle))
     val shortestDistance = minOf(distance, FULL_ROTATION_DEGREES - distance)
     return if (shortestDistance <= ROTATION_SNAP_THRESHOLD_DEGREES) normalizeRotation(nearestRightAngle) else degrees
+}
+
+/**
+ * How far the zoomed video may be panned before its edge leaves the viewport.
+ *
+ * The transformed video is bounded by its rotated bounding box, so a turned video keeps a usable pan
+ * range instead of being pinned to the center.
+ */
+internal fun panBounds(
+    width: Float,
+    height: Float,
+    zoom: Float,
+    rotationDegrees: Float,
+): Offset {
+    val radians = rotationDegrees * PI.toFloat() / 180f
+    val cos = abs(cos(radians))
+    val sin = abs(sin(radians))
+
+    val boundsWidth = zoom * (width * cos + height * sin)
+    val boundsHeight = zoom * (height * cos + width * sin)
+
+    return Offset(
+        x = max(0f, (boundsWidth - width) / 2),
+        y = max(0f, (boundsHeight - height) / 2),
+    )
 }
 
 @UnstableApi
@@ -105,6 +134,8 @@ class VideoZoomAndContentScaleState(
 
     private var showContentScaleJob: Job? = null
 
+    private var lastConstraints: Constraints? = null
+
     fun onVideoContentScaleChanged(newContentScale: VideoContentScale) {
         videoContentScale = newContentScale
         zoom = 1f
@@ -138,28 +169,43 @@ class VideoZoomAndContentScaleState(
         if (!enableZoomGesture) return
 
         isZooming = true
-
-        zoom = (zoom * zoomChange).coerceIn(MIN_ZOOM, MAX_ZOOM)
+        lastConstraints = constraints
 
         if (enableRotateGesture && rotationChange != 0f) {
             rotation = normalizeRotation(rotation + rotationChange)
-            // Pan bounds assume an unrotated frame, so a turned video stays centered.
-            offset = Offset.Zero
-        } else if (enablePanGesture) {
-            val maxX = abs((zoom - 1) * constraints.maxWidth / 2)
-            val maxY = abs((zoom - 1) * constraints.maxHeight / 2)
+        }
 
+        zoom = (zoom * zoomChange).coerceIn(MIN_ZOOM, MAX_ZOOM)
+
+        if (enablePanGesture) {
             offset = Offset(
-                x = (offset.x + zoom * panChange.x).coerceIn(-maxX, maxX),
-                y = (offset.y + zoom * panChange.y).coerceIn(-maxY, maxY),
+                x = offset.x + zoom * panChange.x,
+                y = offset.y + zoom * panChange.y,
             )
+            clampOffsetToPanBounds(constraints)
         }
     }
 
     fun onZoomPanGestureEnd() {
         isZooming = false
         rotation = snapRotationToRightAngle(rotation)
+        // Snapping and un-rotating both shrink the pan range, so a stale offset could leave the video
+        // off center with no way to drag it back.
+        lastConstraints?.let(::clampOffsetToPanBounds)
         updateVideoScaleMetadataAndSendEvent()
+    }
+
+    private fun clampOffsetToPanBounds(constraints: Constraints) {
+        val bounds = panBounds(
+            width = constraints.maxWidth.toFloat(),
+            height = constraints.maxHeight.toFloat(),
+            zoom = zoom,
+            rotationDegrees = rotation,
+        )
+        offset = Offset(
+            x = offset.x.coerceIn(-bounds.x, bounds.x),
+            y = offset.y.coerceIn(-bounds.y, bounds.y),
+        )
     }
 
     suspend fun observe() {
